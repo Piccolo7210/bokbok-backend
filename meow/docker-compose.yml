@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: chatapp-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: meow
+      POSTGRES_PASSWORD: meow
+      POSTGRES_DB: chatapp
+    ports:
+      - "5437:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
