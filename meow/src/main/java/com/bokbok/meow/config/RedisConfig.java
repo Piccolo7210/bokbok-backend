@@ -9,36 +9,34 @@ import org.springframework.data.redis.connection.lettuce.LettuceClientConfigurat
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
-import java.net.URI;
-
 @Configuration
 public class RedisConfig {
 
-    @Value("${spring.data.redis.url}")
-    private String redisUrl;
+    @Value("${spring.data.redis.host}")
+    private String redisHost;
+
+    @Value("${spring.data.redis.port}")
+    private int redisPort;
+
+    @Value("${spring.data.redis.password}")
+    private String redisPassword;
+
+    @Value("${spring.data.redis.ssl.enabled:true}")
+    private boolean sslEnabled;
 
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
-        URI uri = URI.create(redisUrl);
-
-        RedisStandaloneConfiguration config =
-                new RedisStandaloneConfiguration();
-        config.setHostName(uri.getHost());
-        config.setPort(uri.getPort());
-
-        // Extract password from URL
-        if (uri.getUserInfo() != null) {
-            String[] userInfo = uri.getUserInfo().split(":");
-            if (userInfo.length > 1) {
-                config.setPassword(userInfo[1]);
-            }
+        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
+        config.setHostName(redisHost);
+        config.setPort(redisPort);
+        if (redisPassword != null && !redisPassword.isBlank()) {
+            config.setPassword(redisPassword);
         }
 
-        LettuceClientConfiguration.LettuceClientConfigurationBuilder
-                builder = LettuceClientConfiguration.builder();
+        LettuceClientConfiguration.LettuceClientConfigurationBuilder builder =
+                LettuceClientConfiguration.builder();
 
-        // Enable SSL for Upstash (rediss://)
-        if (redisUrl.startsWith("rediss://")) {
+        if (sslEnabled) {
             builder.useSsl().disablePeerVerification();
         }
 
