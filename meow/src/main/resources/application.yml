@@ -21,7 +21,12 @@ spring:
 
   data:
     redis:
-      url: ${REDIS_URL}
+      redis:
+        host: ${REDIS_HOST}
+        port: ${REDIS_PORT}
+        password: ${REDIS_PASSWORD}
+      ssl:
+        enabled:  ${REDIS_SSL:true}
 
   servlet:
     multipart:
