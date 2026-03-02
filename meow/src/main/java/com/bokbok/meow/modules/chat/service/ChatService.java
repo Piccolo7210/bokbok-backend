@@ -70,7 +70,8 @@ public class ChatService {
         conversation.setLastMessageAt(message.getCreatedAt());
         conversationRepository.save(conversation);
 
-        MessageResponse response = MessageResponse.fromEntity(
+        // Build response: senderId = actual sender, receiverId = actual receiver
+        MessageResponse messageResponse = MessageResponse.fromEntity(
                 message, receiver.getId()
         );
 
@@ -78,10 +79,17 @@ public class ChatService {
         messagingTemplate.convertAndSendToUser(
                 receiver.getId(),
                 "/queue/messages",
-                response
+                messageResponse
         );
 
-// If receiver is OFFLINE → send push notification
+        // Also push to sender so their own chat screen updates in real-time
+        messagingTemplate.convertAndSendToUser(
+                sender.getId(),
+                "/queue/messages",
+                messageResponse
+        );
+
+        // If receiver is OFFLINE → send push notification
         if (!presenceService.isOnline(receiver.getId())) {
             notificationService.sendMessageNotification(
                     receiver.getId(),
@@ -94,7 +102,7 @@ public class ChatService {
         // Refresh sender presence
         presenceService.refreshPresence(senderId);
 
-        return response;
+        return messageResponse;
     }
 
     // ── Get All Conversations for a User ────────────────────────
@@ -152,7 +160,13 @@ public class ChatService {
                 });
 
         return messages.stream()
-                .map(m -> MessageResponse.fromEntity(m, otherUserId))
+                .map(m -> {
+                    // receiverId is whoever is NOT the sender in this conversation
+                    String msgReceiverId = m.getSender().getId().equals(userId)
+                            ? otherUserId
+                            : userId;
+                    return MessageResponse.fromEntity(m, msgReceiverId);
+                })
                 .collect(Collectors.toList());
     }
 
